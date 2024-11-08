@@ -71,7 +71,7 @@ const NotaryAndSigner = () => {
   console.log("notaryData", notaryData);
 
   const syncPage = () => {
-    console.log("Page synced!");
+    // console.log("Page synced!");
     // Add sync logic here
   };
 
