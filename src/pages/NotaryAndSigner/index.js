@@ -1,21 +1,5 @@
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import {
-  Box,
-  Dialog,
-  DialogActions,
-  Divider,
-  Grid,
-  List,
-  ListItemButton,
-  ListItemText,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Button,
-} from "@mui/material";
+import { Box, Dialog, DialogActions } from "@mui/material";
+import Grid from "@mui/material/Grid2";
 import axios from "axios";
 import dayjs from "dayjs";
 import { fabric } from "fabric";
@@ -32,6 +16,9 @@ import { useStyles } from "../../styles";
 import { baseUrl } from "../../Utils/constant";
 import { notaryActionsList } from "../../Utils/utilities";
 import { FaLastfmSquare } from "react-icons/fa";
+import LeftSection from "./LeftSection";
+import MiddleSection from "./MiddleSection";
+import RightSection from "./RightSection";
 
 const PDFJS = window.pdfjsLib;
 
@@ -2664,359 +2651,59 @@ const NotaryAndSigner = () => {
         <Grid
           style={{ height: "inherit" }}
           item
-          xs={2.5}
+          size={2.5}
           className={classes.sideMainContainer}
         >
-          <Grid container className={classes.sideBarContainer}>
-            <Grid item xs={12}>
-              <img
-                src={notaryLogo}
-                alt="image"
-                width="150"
-                height="32"
-                className={classes.usaNotary}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Divider sx={{ marginTop: "14px" }} />
-              <h3>Documents</h3>
-
-              {images.length ? (
-                <FormControl fullWidth>
-                  <InputLabel id="document-select-label">
-                    Select a Document
-                  </InputLabel>
-                  <Select
-                    labelId="document-select-label"
-                    value={activeIndex === null ? "" : activeIndex}
-                    onChange={(e) => {
-                      const selectedIndex = e.target.value;
-                      if (selectedIndex === "") return; // Ignore the placeholder
-                      const selectedDocument = pdfURLArray[selectedIndex];
-                      showDocumentPdf(
-                        selectedIndex,
-                        +selectedDocument.jobDocument.ID,
-                        +selectedDocument.jobDocument.document_id
-                      );
-                    }}
-                    label="Select a Document"
-                  >
-                    <MenuItem value="" disabled>
-                      Select a Document
-                    </MenuItem>
-                    {pdfURLArray.map((value, index) => (
-                      <MenuItem key={index} value={index}>
-                        {value.jobDocument.doc_name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              ) : (
-                "loading..."
-              )}
-
-              <Button
-                variant="contained"
-                onClick={syncPage} // This function handles syncing when clicked
-                sx={{
-                  backgroundColor: "#efefef",
-                  color: "#5d5d5d",
-                  marginTop: "20px",
-                  "&:hover": { backgroundColor: "#bfbfbf" },
-                }}
-                fullWidth
-              >
-                Sync Page
-              </Button>
-
-              {jobSchedule.length ? (
-                jobSchedule.map((schedule, index) => (
-                  <div key={index}>
-                    <iframe
-                      src={schedule.whereby_host_link}
-                      title="Whereby Session"
-                      width="100%"
-                      height="600px" // Adjust this according to your sidebar height
-                      style={{
-                        border: "none",
-                        borderRadius: "8px",
-                        marginTop: "50px",
-                      }}
-                      allow="camera; microphone; fullscreen"
-                    />
-                  </div>
-                ))
-              ) : (
-                <p>Loading video...</p>
-              )}
-            </Grid>
-          </Grid>
+          <LeftSection
+            notaryLogo={notaryLogo}
+            images={images}
+            activeIndex={activeIndex}
+            pdfURLArray={pdfURLArray}
+            showDocumentPdf={showDocumentPdf}
+            syncPage={syncPage}
+            jobSchedule={jobSchedule}
+            classes={classes}
+          />
         </Grid>
+
         <Grid
           style={{ height: "inherit" }}
           item
-          xs={7}
+          size={7}
           sx={{ backgroundColor: "#ebebeb" }}
         >
-          <Grid
-            container
-            style={{ height: "inherit" }}
-            className={classes.mainPagesHeader}
-          >
-            <Grid item xs={12} className={classes.headerGrid12}>
-              <button className={classes.EndSessionBtn} onClick={EndSession}>
-                End Session
-              </button>
-              {/* <Box className={classes.pageBtnConatiner}>
-                <Typography className={classes.btnPages}>
-                  <KeyboardArrowLeftIcon onClick={minusDocumentNum} />
-                  {docIds === "" ? 0 : docIds + 1} of {images.length}
-                  <KeyboardArrowRightIcon onClick={addDocumentNum} />
-                </Typography>
-              </Box> */}
-              {typeof docIds === "number" ? (
-                <button
-                  className={classes.CompleteBtn}
-                  onClick={completeDocument}
-                  id={`completebtn${docIds}`}
-                >
-                  Complete
-                </button>
-              ) : (
-                ""
-              )}
-              {/* <button
-                className={classes.CompleteBtn}
-                onClick={completeDocument}
-                id="completebtn"
-              >
-                Complete
-              </button> */}
-            </Grid>
-
-            <Grid
-              style={{ height: "calc(100vh - 58px)", overflowY: "auto" }}
-              item
-              xs={12}
-              className={classes.canvasDrapDRopMainContainer}
-              onScroll={(e) => setDivScroll(e.target.scrollTop)}
-              ref={gridScroll}
-            >
-              {!images.length ? (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "0px",
-                    // left: "0px",
-                    bottom: "0px",
-                    // backgroundColor: "#ffffff82",
-                    display: "grid",
-                    placeContent: "center",
-                    zIndex: "1000",
-                  }}
-                >
-                  <img src={Loader} alt="image" width={"100"} />
-                </div>
-              ) : (
-                <div ref={documentContainer} id="documentContainer">
-                  {images?.map((value, index) => (
-                    <div
-                      id={"canvas-box-" + index}
-                      key={index}
-                      className="canvas-box"
-                    >
-                      <div
-                        id={"completedPlaceholder-" + index}
-                        key={index}
-                        className={classes.completedPlaceholder}
-                      >
-                        <div></div>
-                      </div>
-                      {value?.map((val, ind) => (
-                        <div
-                          id={"canvas-area-" + index + "-" + ind}
-                          key={ind}
-                          onDragOver={(e) => ondragOver(e)}
-                          onDrop={(e) => dragDropped(e, ind)}
-                        >
-                          <p id={"docPage-" + index + "-" + ind}>{ind + 1}</p>
-                          <canvas
-                            width={"720"}
-                            height={"932"}
-                            id={"canvas" + index + "-" + ind}
-                          ></canvas>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Grid>
-          </Grid>
+          <MiddleSection
+            classes={classes}
+            completeDocument={completeDocument}
+            docIds={docIds}
+            EndSession={EndSession}
+            setDivScroll={setDivScroll}
+            gridScroll={gridScroll}
+            images={images}
+            Loader={Loader}
+            documentContainer={documentContainer}
+            ondragOver={ondragOver}
+            dragDropped={dragDropped}
+          />
         </Grid>
+
         <Grid
           item
-          xs={2.5}
+          size={2.5}
           sx={{ overflowY: "auto", height: "inherit" }}
           className={classes.ActionsMainContainer}
         >
-          <Grid container>
-            <Grid item xs={12}>
-              <Box>
-                <button
-                  className={classes.zoomIconsContainer}
-                  onClick={() => zoomCanvas(0.1)}
-                >
-                  <ZoomInIcon className={classes.zoomIcons} />
-                </button>
-                <button
-                  className={classes.zoomIconsContainer2}
-                  onClick={() => zoomCanvas(-0.1)}
-                >
-                  <ZoomOutIcon className={classes.zoomIcons} />
-                </button>
-              </Box>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography className={classes.ActionText}>Actions</Typography>
-            </Grid>
-
-            <Grid item xs={12}>
-              {/* start of users box */}
-              {clientsData.map((participant, i) => {
-                console.log(participant);
-                return (
-                  <Box key={i}>
-                    <p>
-                      <b style={{ color: "#5d5d5d" }}>Participants</b>
-                    </p>
-                    <Box className={classes.nameWithBox}>
-                      <span
-                        style={{ backgroundColor: participant?.tag_color }}
-                        className={classes.smallBox2}
-                      ></span>
-                      <span className={classes.personName}>
-                        {participant.fullname}
-                      </span>
-                    </Box>
-                    <Box className={classes.dragDropBoxContainer}>
-                      <span
-                        className={classes.dragDropBox}
-                        draggable="true"
-                        onDragStart={(e) => dragStart(e)}
-                        data-elementname="writeText"
-                        data-type={participant.type}
-                        data-elementuserid={participant?.id ?? null}
-                        data-elementcolor={participant?.tag_color}
-                        data-signername={
-                          participant.fullname
-                          // participant.first_name +
-                          // participant.middle_name +
-                          // participant.last_name
-                        }
-                        data-element-type={"indicator"}
-                      >
-                        {" "}
-                        text
-                      </span>
-                      <span
-                        className={classes.dragDropBox2}
-                        draggable="true"
-                        onDragStart={(e) => dragStart(e)}
-                        data-elementname="participantName"
-                        data-type={participant.type}
-                        data-elementuserid={participant?.id}
-                        data-elementcolor={participant?.tag_color}
-                        data-signername={participant.fullname}
-                        data-element-type={"indicator"}
-                      >
-                        {" "}
-                        Name
-                      </span>
-                      <span
-                        className={classes.dragDropBox2}
-                        draggable="true"
-                        onDragStart={(e) => dragStart(e)}
-                        data-elementname="sign"
-                        data-type={participant.type}
-                        data-elementuserid={participant?.id}
-                        data-elementcolor={participant?.tag_color}
-                        data-signername={
-                          participant.fullname
-                          // participant.first_name +
-                          // participant.middle_name +
-                          // participant.last_name
-                        }
-                        data-element-type={"indicator"}
-                      >
-                        {" "}
-                        Sign
-                      </span>
-                      <span
-                        className={classes.dragDropBox2}
-                        draggable="true"
-                        onDragStart={(e) => dragStart(e)}
-                        data-elementname="participantInitial"
-                        data-type={participant.type}
-                        data-elementuserid={participant?.id}
-                        data-elementcolor={participant?.tag_color}
-                        data-signername={participant.fullname}
-                        data-element-type={"indicator"}
-                      >
-                        {" "}
-                        Initial
-                      </span>
-                    </Box>
-                    <Divider sx={{ margin: "20px 0px" }} />
-                  </Box>
-                );
-              })}
-              {/* end of user div  */}
-              <p>
-                <b style={{ color: "#5d5d5d" }}>Notary</b>
-              </p>
-              <Box
-                className={classes.nameWithBox}
-                style={{ marginBottom: "20px" }}
-              >
-                <span
-                  style={{ background: "rgb(220,38,38)" }}
-                  className={classes.smallBox2}
-                ></span>
-                <span className={classes.personName}>
-                  {notaryData?.fullname}
-                </span>
-              </Box>
-              <Box>
-                {notaryActionsList.map((item, i) => (
-                  <span
-                    key={i}
-                    draggable="true"
-                    onDragStart={(e) => dragStart(e)}
-                    className={classes.actionsListContainer}
-                    data-elementname={item.elementName}
-                    data-type="notary"
-                    imagesrc={item.imagePath}
-                    data-notaryid={notaryData?.ID}
-                    data-notarycommissionid={item.commissionId}
-                    data-noratyexpirydate={item.expDate}
-                    data-notarydisclosuretext={item.disclosureText}
-                    data-notaryfieldsbgcolor={"#FF1E1E"}
-                    data-notaryname={item.notaryName}
-                    data-notarytitle={item.notaryTitle}
-                    data-element-type={item.elementType}
-                  >
-                    <item.actionIcon />
-                    <Typography className={classes.ActionTextt}>
-                      {item.actionName}
-                    </Typography>
-                  </span>
-                ))}
-              </Box>
-            </Grid>
-          </Grid>
+          <RightSection
+            classes={classes}
+            zoomCanvas={zoomCanvas}
+            clientsData={clientsData}
+            dragStart={dragStart}
+            notaryData={notaryData}
+            notaryActionsList={notaryActionsList}
+          />
         </Grid>
       </Grid>
+
       <Dialog open={inCompleteDocError}>
         <Box sx={{ padding: "3rem" }}>
           <h2 style={{ textAlign: "center" }}>Document is incomplete</h2>
